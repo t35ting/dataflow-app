@@ -24,6 +24,12 @@ const DIFFICULTY_COLORS = {
   Unknown: "bg-gray-100 text-gray-800"
 };
 
+const STATUS_COLORS = {
+  "Not Prepared": "text-red-600",
+  "In Progress": "text-yellow-600",
+  "Prepared": "text-green-600"
+};
+
 export default function ProblemsTable({ isEditMode, onEditNotes }: ProblemsTableProps) {
   const [filters, setFilters] = useState<ProblemFilters>({
     search: "",
@@ -60,7 +66,9 @@ export default function ProblemsTable({ isEditMode, onEditNotes }: ProblemsTable
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/problems'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics/difficulty'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics/tags'] });
       toast({
         title: "Status updated",
         description: "Problem status updated successfully",
@@ -81,7 +89,9 @@ export default function ProblemsTable({ isEditMode, onEditNotes }: ProblemsTable
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/problems'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics/difficulty'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/analytics/tags'] });
       toast({
         title: "Problem deleted",
         description: "Problem deleted successfully",
@@ -267,7 +277,7 @@ export default function ProblemsTable({ isEditMode, onEditNotes }: ProblemsTable
                           onValueChange={(value) => handleStatusChange(problem.id, value)}
                           disabled={!isEditMode}
                         >
-                          <SelectTrigger className="w-[140px] border-0 bg-transparent">
+                          <SelectTrigger className={`w-[140px] border-0 bg-transparent ${STATUS_COLORS[problem.status as keyof typeof STATUS_COLORS]} font-medium`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
