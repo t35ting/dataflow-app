@@ -30,7 +30,11 @@ export async function loadLeetCodeData() {
 
             // Process and normalize the data
             const processedRows = rows.map(row => {
-              const tags = row.Tags ? row.Tags.split(',').map((tag: string) => tag.trim()).sort() : [];
+              const tags = row.Tags ? row.Tags.split(',').map((tag: string) => {
+                const trimmedTag = tag.trim();
+                // Replace "Dynamic Programming" with "DP"
+                return trimmedTag === "Dynamic Programming" ? "DP" : trimmedTag;
+              }).sort() : [];
               const difficulty = normalizeDifficulty(row.Difficulty || '');
               const title = (row.Title || '').trim();
               const id = (row.ID || '').toString().trim();

@@ -165,8 +165,8 @@ export default function AnalyticsDashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={tagChartData} barCategoryGap="30%">
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="tag" />
-                    <YAxis />
+                    <XAxis dataKey="tag" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="#1976D2" radius={[4, 4, 0, 0]} barSize={40} />
                   </BarChart>
