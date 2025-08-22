@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet";
-import UploadSection from "@/components/upload-section";
 import AnalyticsDashboard from "@/components/analytics-dashboard";
 import ProblemsTable from "@/components/problems-table";
 import EditModeModal from "@/components/edit-mode-modal";
@@ -47,10 +46,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleCsvUpload = (data: any) => {
-    setCsvData(data);
-    setShowCsvPreview(true);
-  };
 
   const handleEditNotes = (problemId: string) => {
     setSelectedProblemId(problemId);
@@ -97,7 +92,6 @@ export default function Dashboard() {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <UploadSection onCsvUpload={handleCsvUpload} />
           <AnalyticsDashboard />
           <ProblemsTable 
             isEditMode={isEditMode} 
