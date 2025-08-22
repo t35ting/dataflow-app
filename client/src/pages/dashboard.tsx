@@ -55,8 +55,8 @@ export default function Dashboard() {
   return (
     <>
       <Helmet>
-        <title>Microtasks Manager - CSV Problem Tracker</title>
-        <meta name="description" content="Comprehensive problem management webapp for tracking coding problems with CSV import, analytics dashboard, and password-protected editing." />
+        <title>LeetCode Problems Tracker - Problem Management System</title>
+        <meta name="description" content="Comprehensive LeetCode problem tracking system with analytics dashboard, search functionality, and password-protected editing capabilities." />
       </Helmet>
 
       <div className="min-h-screen bg-gray-50 font-inter">
@@ -66,7 +66,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
                 <List className="text-primary text-2xl mr-3" />
-                <h1 className="text-xl font-semibold text-gray-900">Microtasks Manager</h1>
+                <h1 className="text-xl font-semibold text-gray-900">LeetCode Problems Tracker</h1>
               </div>
               <div className="flex items-center space-x-4">
                 <Button 
