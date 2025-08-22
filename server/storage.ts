@@ -51,8 +51,14 @@ export class MemStorage implements IStorage {
 
     // Sort
     allProblems.sort((a, b) => {
-      const aVal = a[filters.sortBy];
-      const bVal = b[filters.sortBy];
+      let aVal = a[filters.sortBy];
+      let bVal = b[filters.sortBy];
+      
+      // For ID field, convert to number for proper numerical sorting
+      if (filters.sortBy === "id") {
+        aVal = parseInt(aVal as string) || 0;
+        bVal = parseInt(bVal as string) || 0;
+      }
       
       if (aVal < bVal) return filters.sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return filters.sortOrder === "asc" ? 1 : -1;
