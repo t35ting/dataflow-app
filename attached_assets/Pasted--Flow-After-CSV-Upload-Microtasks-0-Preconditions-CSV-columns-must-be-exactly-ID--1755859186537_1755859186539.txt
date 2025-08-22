@@ -1,0 +1,130 @@
+# Flow: After CSV Upload (Microtasks)
+
+## 0) Preconditions
+
+* CSV columns must be exactly: `ID, Title, Difficulty, Tags, Link`
+* Edit actions remain **locked** until valid key `qwerty@321123` is entered.
+
+---
+
+## 1) File Intake & Pre-Validation
+
+1. User selects file → show “Upload” button enabled.
+2. Read first row → verify required headers in strict order.
+3. If headers mismatch → show blocking error with example template to download.
+4. Preview first 20 rows in a modal (read-only) with row count.
+
+## 2) Parse & Normalize
+
+5. Parse CSV to objects: `{ id, title, difficulty, tags, link }`.
+6. Trim whitespace for all fields; collapse multiple spaces.
+7. Normalize `difficulty` → map case-insensitive to one of: `Easy | Medium | Hard`; unrecognized → set `Unknown` and flag.
+8. Normalize `tags`: split by comma/semicolon, trim each, deduplicate, sort alphabetically.
+9. Validate `id` is unique per row; coerce to string (keep leading zeros if any).
+10. Validate `link` is a valid URL; flag malformed links.
+
+## 3) De-Duplication & Merge
+
+11. Check collisions with existing DB records on `id`.
+12. If duplicate `id`:
+
+    * If existing record has `status` or `notes`, **merge**: update `title/difficulty/tags/link` from CSV, **preserve** `status` & `notes`.
+    * If CSV has conflicting core fields, mark as `updated_from_csv=true` for audit.
+13. If `id` is new → create a new record with default `status="Not Prepared"` and empty `notes`.
+
+## 4) Default Enrichment
+
+14. Add derived fields:
+
+    * `createdAt` (new rows) / `updatedAt` (merged rows)
+    * `slug` from `title` (kebab-case)
+    * `searchText` = `title + tags.join(" ")` (lowercased)
+15. Precompute quick filters:
+
+    * `isArray`, `isDP`, `isGraph`, etc., from normalized `tags`.
+
+## 5) Validation Pass (Row-Level)
+
+16. For each row, run checks:
+
+    * `id` non-empty, unique in batch
+    * `title` non-empty
+    * `difficulty` in allowed set
+    * `link` reachable format (no network call; regex only)
+17. Collect all errors/warnings into an **Import Report** structure:
+
+    * `rowsOk`, `rowsWithWarnings`, `rowsWithErrors`.
+18. If any errors → show report modal with row numbers & reasons; allow **Download Error CSV**; block commit.
+
+## 6) Commit to Storage
+
+19. Start transaction (DB or local persistent store).
+20. Upsert all valid rows.
+21. Commit transaction; rollback on failure with human message.
+
+## 7) UI Refresh & Feedback
+
+22. Close preview modal; show **Import Summary Toast**:
+
+    * `Added: X`, `Updated: Y`, `Skipped (errors): Z`.
+23. Refresh **Problems Table** with new data (read-only).
+24. Auto-apply **last used filters** (persisted in local storage).
+
+## 8) Analytics Recompute (Dashboard)
+
+25. Recompute and update cards:
+
+    * `Total Problems`
+    * `Prepared`, `In Progress`, `Not Prepared`
+    * `% Prepared` overall
+26. Update charts:
+
+    * **Difficulty Pie**: Easy/Medium/Hard distribution.
+    * **Tag Bar**: top N tags count.
+    * **Status Over Time Line**: cumulative `Prepared` by `updatedAt` (if history exists).
+27. If `Unknown` difficulty rows > 0 → surface a clickable warning chip opening a filter to fix them.
+
+## 9) Indexing & Performance
+
+28. Rebuild client-side indexes for:
+
+    * `searchText` (instant search)
+    * `difficulty`, `status`, `tags` (facet filters)
+29. Paginate table (e.g., 50 rows/page) with server/client sorting.
+30. Cache last dataset version hash; if a new CSV with same hash is uploaded, show “No changes detected.”
+
+## 10) Edit Mode Gate (Key-locked)
+
+31. Keep all fields **read-only**.
+32. Show an “Enter Edit Key” button in the header.
+33. On click, open modal with password input; if equals `qwerty@321123`:
+
+    * Grant **Edit Mode** for current session (store in memory only).
+    * Unlock `status` (dropdown), `notes` (markdown), and **Add/Delete**.
+34. Wrong key → shake modal + “Invalid key” message; remain read-only.
+
+## 11) In-Place Editing (When Unlocked)
+
+35. Inline status change updates DB instantly; show small success tick.
+36. Notes editor (markdown) with autosave every 2s and explicit “Save” button.
+37. Add Problem form (for items not in CSV): requires `id, title, difficulty`; tags optional.
+38. Delete Problem → confirmation dialog; soft-delete with `deleted=true` (keep in DB, hide by default).
+
+## 12) Export & Sync
+
+39. Export button always available:
+
+    * **Export CSV** with all columns plus `Status` and `Notes`.
+    * **Export XLSX** (optional).
+40. Re-import flow supports:
+
+    * Updating core fields from CSV while **preserving** existing `status`/`notes` unless explicitly present in CSV.
+41. Show diff preview before applying a re-import (added/updated/removed counts).
+
+## 13) QA & Safety Nets
+
+42. If more than N% rows have warnings/errors → prompt “Review before commit”.
+43. Autosave filter/sort state per user.
+44. Audit log entries (local or DB) for: import started, rows added/updated, edit mode enabled, status changes.
+45. Accessibility: focus states, aria labels for table controls.
+46. Dark mode: ensure charts and tag chips remain legible.
