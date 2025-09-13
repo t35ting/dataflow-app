@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { storage } from "./storage";
 import { 
   insertProblemSchema, 
@@ -13,6 +14,39 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Health check endpoint for Railway
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+  
+  // Root endpoint for basic access
+  app.get("/", (req, res) => {
+    // In production, serve the frontend index.html
+    if (process.env.NODE_ENV === "production") {
+      const indexPath = path.resolve(process.cwd(), "dist", "public", "index.html");
+      res.sendFile(indexPath);
+    } else {
+      res.status(200).json({ 
+        message: "DataFlow API is running",
+        status: "operational",
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // API status endpoint
+  app.get("/api/status", (req, res) => {
+    res.status(200).json({ 
+      message: "DataFlow API is running",
+      status: "operational",
+      timestamp: new Date().toISOString()
+    });
+  });
   
   // Get problems with filters
   app.get("/api/problems", async (req, res) => {

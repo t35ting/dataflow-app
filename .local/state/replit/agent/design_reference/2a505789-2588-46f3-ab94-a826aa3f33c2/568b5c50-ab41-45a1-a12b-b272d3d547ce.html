@@ -1,0 +1,619 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microtasks Manager - CSV Problem Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: '#1976D2',
+                    secondary: '#424242',
+                    success: '#388E3C',
+                    warning: '#F57C00',
+                    error: '#D32F2F'
+                },
+                fontFamily: {
+                    'inter': ['Inter', 'system-ui', 'sans-serif']
+                }
+            }
+        }
+    };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 font-inter">
+    <!-- @COMPONENT: AppHeader -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-tasks text-primary text-2xl mr-3"></i>
+                    <h1 class="text-xl font-semibold text-gray-900">Microtasks Manager</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- @STATE: editMode:boolean = false -->
+                    <button id="editModeBtn" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors" data-event="click:toggleEditMode">
+                        <i class="fas fa-lock mr-2"></i>
+                        Enter Edit Mode
+                    </button>
+                    <button class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors" data-event="click:exportData">
+                        <i class="fas fa-download mr-2"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: AppHeader -->
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- @COMPONENT: UploadSection -->
+        <section class="mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">CSV Upload</h2>
+                    <button class="text-sm text-primary hover:text-blue-700 transition-colors" data-event="click:downloadTemplate">
+                        <i class="fas fa-download mr-1"></i>
+                        Download Template
+                    </button>
+                </div>
+                
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors" id="dropzone">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-lg font-medium text-gray-700 mb-2">Drop your CSV file here or click to browse</p>
+                    <p class="text-sm text-gray-500 mb-4">Required columns: ID, Title, Difficulty, Tags, Link</p>
+                    <input type="file" id="csvInput" accept=".csv" class="hidden" data-implementation="Handle CSV file upload and validation">
+                    <button class="inline-flex items-center px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 transition-colors" data-event="click:triggerFileInput">
+                        <i class="fas fa-folder-open mr-2"></i>
+                        Choose File
+                    </button>
+                </div>
+
+                <!-- Upload Progress -->
+                <div id="uploadProgress" class="hidden mt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Processing CSV...</span>
+                        <span class="text-sm text-gray-500" data-bind="progress.percentage">45%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 45%" data-bind="progress.width"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: UploadSection -->
+
+        <!-- @COMPONENT: AnalyticsDashboard -->
+        <section class="mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Analytics Dashboard</h2>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="fas fa-list text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Total Problems</p>
+                            <p class="text-2xl font-bold text-gray-900" data-bind="stats.total">1,247</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="fas fa-check-circle text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Prepared</p>
+                            <p class="text-2xl font-bold text-gray-900" data-bind="stats.prepared">892</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <i class="fas fa-clock text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">In Progress</p>
+                            <p class="text-2xl font-bold text-gray-900" data-bind="stats.inProgress">203</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-lg">
+                            <i class="fas fa-exclamation-circle text-error text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Not Prepared</p>
+                            <p class="text-2xl font-bold text-gray-900" data-bind="stats.notPrepared">152</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Difficulty Distribution</h3>
+                    <div class="relative h-64">
+                        <canvas id="difficultyChart" data-implementation="Implement Chart.js pie chart for difficulty distribution"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Tags</h3>
+                    <div class="relative h-64">
+                        <canvas id="tagsChart" data-implementation="Implement Chart.js bar chart for tag distribution"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: AnalyticsDashboard -->
+
+        <!-- @COMPONENT: ProblemsTable -->
+        <section>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">Problems Table</h2>
+                        
+                        <!-- Search and Filters -->
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" placeholder="Search problems..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" data-bind="searchQuery">
+                            </div>
+                            
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" data-bind="difficultyFilter">
+                                <option value="">All Difficulties</option>
+                                <option value="Easy">Easy</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Hard">Hard</option>
+                            </select>
+                            
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" data-bind="statusFilter">
+                                <option value="">All Statuses</option>
+                                <option value="Not Prepared">Not Prepared</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Prepared">Prepared</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-event="click:sortBy:id">
+                                    ID <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-event="click:sortBy:title">
+                                    Title <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-event="click:sortBy:difficulty">
+                                    Difficulty <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Tags
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-event="click:sortBy:status">
+                                    Status <i class="fas fa-sort ml-1"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Link
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" data-implementation="Implement pagination and row virtualization for large datasets">
+                            <!-- @MAP: problems.map(problem => ( -->
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900" data-bind="problem.id">LC001</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" data-bind="problem.title">Two Sum</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800" data-bind="problem.difficultyClass">Easy</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-1">
+                                        <!-- @MAP: problem.tags.map(tag => ( -->
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700" data-bind="tag">Array</span>
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700" data-bind="tag">Hash Table</span>
+                                        <!-- @END_MAP )) -->
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <select class="text-sm border-0 bg-transparent focus:ring-2 focus:ring-primary rounded-md disabled:opacity-50" disabled data-bind="problem.status" data-implementation="Enable when edit mode is active">
+                                        <option value="Not Prepared">Not Prepared</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Prepared" selected>Prepared</option>
+                                    </select>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="#" class="text-primary hover:text-blue-700 transition-colors" data-bind="problem.link" target="_blank">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-primary hover:text-blue-700 mr-3 disabled:opacity-50" disabled data-event="click:editNotes" data-implementation="Enable when edit mode is active">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-700 disabled:opacity-50" disabled data-event="click:deleteProblem" data-implementation="Enable when edit mode is active">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900" data-bind="problem.id">LC003</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" data-bind="problem.title">Longest Substring Without Repeating Characters</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800" data-bind="problem.difficultyClass">Medium</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700" data-bind="tag">String</span>
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700" data-bind="tag">Sliding Window</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <select class="text-sm border-0 bg-transparent focus:ring-2 focus:ring-primary rounded-md disabled:opacity-50" disabled data-bind="problem.status">
+                                        <option value="Not Prepared">Not Prepared</option>
+                                        <option value="In Progress" selected>In Progress</option>
+                                        <option value="Prepared">Prepared</option>
+                                    </select>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="#" class="text-primary hover:text-blue-700 transition-colors" data-bind="problem.link" target="_blank">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-primary hover:text-blue-700 mr-3 disabled:opacity-50" disabled data-event="click:editNotes">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-700 disabled:opacity-50" disabled data-event="click:deleteProblem">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900" data-bind="problem.id">LC021</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" data-bind="problem.title">Merge Two Sorted Lists</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800" data-bind="problem.difficultyClass">Easy</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700" data-bind="tag">Linked List</span>
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-700" data-bind="tag">Recursion</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <select class="text-sm border-0 bg-transparent focus:ring-2 focus:ring-primary rounded-md disabled:opacity-50" disabled data-bind="problem.status">
+                                        <option value="Not Prepared" selected>Not Prepared</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Prepared">Prepared</option>
+                                    </select>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="#" class="text-primary hover:text-blue-700 transition-colors" data-bind="problem.link" target="_blank">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-primary hover:text-blue-700 mr-3 disabled:opacity-50" disabled data-event="click:editNotes">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-700 disabled:opacity-50" disabled data-event="click:deleteProblem">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- @END_MAP )) -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="bg-white px-6 py-3 border-t border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700">
+                            Showing <span class="font-medium" data-bind="pagination.start">1</span> to <span class="font-medium" data-bind="pagination.end">50</span> of <span class="font-medium" data-bind="pagination.total">1,247</span> results
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-50" disabled data-event="click:previousPage">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="px-3 py-1 bg-primary text-white rounded-md text-sm">1</button>
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50" data-event="click:goToPage:2">2</button>
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50" data-event="click:goToPage:3">3</button>
+                            <span class="px-2 text-sm text-gray-500">...</span>
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50" data-event="click:goToPage:25">25</button>
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50" data-event="click:nextPage">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: ProblemsTable -->
+    </main>
+
+    <!-- @COMPONENT: EditModeModal -->
+    <div id="editModeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" data-implementation="Show/hide based on edit mode state">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Enter Edit Mode</h3>
+                    <button class="text-gray-400 hover:text-gray-600" data-event="click:closeModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <p class="text-sm text-gray-600 mb-4">Enter the edit key to unlock problem editing capabilities.</p>
+                
+                <div class="mb-4">
+                    <input type="password" id="editKey" placeholder="Enter edit key..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" data-implementation="Validate against qwerty@321123">
+                    <p id="keyError" class="text-sm text-red-600 mt-1 hidden">Invalid key. Please try again.</p>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors" data-event="click:closeModal">
+                        Cancel
+                    </button>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors" data-event="click:validateEditKey">
+                        Unlock
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: EditModeModal -->
+
+    <!-- @COMPONENT: CSVPreviewModal -->
+    <div id="csvPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" data-implementation="Show when CSV is uploaded and validated">
+        <div class="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">CSV Preview</h3>
+                        <p class="text-sm text-gray-600" data-bind="csvPreview.summary">Found 156 rows, showing first 20</p>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600" data-event="click:closePreview">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Difficulty</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tags</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Link</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" data-implementation="Populate with CSV preview data">
+                            <!-- @MAP: csvPreview.rows.map(row => ( -->
+                            <tr>
+                                <td class="px-4 py-2 text-sm font-mono" data-bind="row.id">LC001</td>
+                                <td class="px-4 py-2 text-sm" data-bind="row.title">Two Sum</td>
+                                <td class="px-4 py-2 text-sm" data-bind="row.difficulty">Easy</td>
+                                <td class="px-4 py-2 text-sm" data-bind="row.tags">Array, Hash Table</td>
+                                <td class="px-4 py-2 text-sm text-primary" data-bind="row.link">https://leetcode.com/problems/two-sum</td>
+                            </tr>
+                            <!-- @END_MAP )) -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-200 bg-gray-50">
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        <span class="text-green-600 font-medium" data-bind="validation.valid">153 valid</span>, 
+                        <span class="text-yellow-600 font-medium" data-bind="validation.warnings">2 warnings</span>, 
+                        <span class="text-red-600 font-medium" data-bind="validation.errors">1 error</span>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" data-event="click:downloadErrorReport">
+                            <i class="fas fa-download mr-2"></i>
+                            Download Error Report
+                        </button>
+                        <button class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" data-event="click:closePreview">
+                            Cancel
+                        </button>
+                        <button class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors" data-event="click:commitImport" data-implementation="Only enable if no blocking errors">
+                            Import Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: CSVPreviewModal -->
+
+    <!-- @COMPONENT: NotesEditorModal -->
+    <div id="notesModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" data-implementation="Show when editing notes for a problem">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Edit Notes</h3>
+                    <button class="text-gray-400 hover:text-gray-600" data-event="click:closeNotesEditor">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-600 mt-1" data-bind="selectedProblem.title">Two Sum - LC001</p>
+            </div>
+            
+            <div class="p-6">
+                <textarea id="notesEditor" rows="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Add your notes here... (Markdown supported)" data-bind="selectedProblem.notes" data-implementation="Implement autosave every 2 seconds"></textarea>
+                
+                <div class="flex items-center justify-between mt-4">
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-markdown mr-1"></i>
+                        Markdown supported
+                    </div>
+                    <div class="flex space-x-3">
+                        <button class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors" data-event="click:closeNotesEditor">
+                            Cancel
+                        </button>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors" data-event="click:saveNotes">
+                            Save Notes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: NotesEditorModal -->
+
+    <!-- @COMPONENT: ToastNotifications -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2" data-implementation="Show success/error toast messages">
+        <!-- Example toast - hidden by default -->
+        <div class="hidden bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center" id="successToast">
+            <i class="fas fa-check-circle mr-3"></i>
+            <span data-bind="toast.message">Data imported successfully!</span>
+            <button class="ml-4 text-green-200 hover:text-white" data-event="click:closeToast">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ToastNotifications -->
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        (function() {
+            // Initialize charts when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize difficulty distribution chart
+                const difficultyCtx = document.getElementById('difficultyChart').getContext('2d');
+                new Chart(difficultyCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Easy', 'Medium', 'Hard'],
+                        datasets: [{
+                            data: [456, 542, 249],
+                            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+
+                // Initialize tags chart
+                const tagsCtx = document.getElementById('tagsChart').getContext('2d');
+                new Chart(tagsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Array', 'String', 'Hash Table', 'Math', 'Dynamic Programming'],
+                        datasets: [{
+                            label: 'Count',
+                            data: [324, 298, 267, 189, 156],
+                            backgroundColor: '#1976D2',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+
+            // File upload handler
+            const dropzone = document.getElementById('dropzone');
+            const csvInput = document.getElementById('csvInput');
+
+            dropzone.addEventListener('click', function() {
+                csvInput.click();
+            });
+
+            dropzone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropzone.classList.add('border-primary', 'bg-blue-50');
+            });
+
+            dropzone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                dropzone.classList.remove('border-primary', 'bg-blue-50');
+            });
+
+            dropzone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropzone.classList.remove('border-primary', 'bg-blue-50');
+                // TODO: Handle dropped files
+            });
+
+            // Edit mode toggle
+            document.getElementById('editModeBtn').addEventListener('click', function() {
+                document.getElementById('editModeModal').classList.remove('hidden');
+            });
+
+            // Modal close handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.dataset.event && e.target.dataset.event.includes('closeModal')) {
+                    document.getElementById('editModeModal').classList.add('hidden');
+                }
+                if (e.target.dataset.event && e.target.dataset.event.includes('closePreview')) {
+                    document.getElementById('csvPreviewModal').classList.add('hidden');
+                }
+                if (e.target.dataset.event && e.target.dataset.event.includes('closeNotesEditor')) {
+                    document.getElementById('notesModal').classList.add('hidden');
+                }
+            });
+
+            // Search functionality
+            const searchInput = document.querySelector('input[data-bind="searchQuery"]');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    // TODO: Implement real-time search filtering
+                    console.log('Search query:', this.value);
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
