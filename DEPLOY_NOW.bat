@@ -1,51 +1,43 @@
 @echo off
-echo 🚀 DataFlow Deployment Script
-echo =============================
+echo 🚀 DataFlow - Deploying to Render NOW!
+echo =====================================
+
+echo 📋 Building application...
+npm run build
+if %errorlevel% neq 0 (
+    echo ❌ Build failed!
+    pause
+    exit /b 1
+)
+echo ✅ Build successful!
 
 echo.
-echo 📋 Prerequisites Check:
-echo ✅ Node.js installed: 
-node --version
-echo ✅ Dependencies installed
-echo ✅ Build completed
-
+echo 🌐 Opening Render Dashboard...
+echo Please follow these steps:
 echo.
-echo 🔧 Next Steps:
-echo 1. Create a .env file with your database credentials
-echo 2. Choose your deployment platform
+echo 1. Click "New +" → "Web Service"
+echo 2. Connect GitHub: https://github.com/t35ting/dataflow-app.git
+echo 3. Settings:
+echo    - Name: dataflow-app
+echo    - Environment: Node
+echo    - Build Command: npm run build
+echo    - Start Command: npm start
+echo    - Plan: Free
 echo.
-
-echo 🎯 Option 1: Deploy to Vercel
-echo ------------------------------
-echo 1. Run: vercel login
-echo 2. Select GitHub login
-echo 3. Run: vercel --prod
+echo 4. Add Environment Variables:
+echo    - NODE_ENV = production
+echo    - PORT = 10000
 echo.
-
-echo 🎯 Option 2: Deploy to Railway  
-echo ------------------------------
-echo 1. Run: railway login
-echo 2. Run: railway init
-echo 3. Run: railway up
+echo 5. Click "Create Web Service"
 echo.
-
-echo 🎯 Option 3: Deploy to Render
-echo ------------------------------
-echo 1. Go to render.com
-echo 2. Connect your GitHub repo
-echo 3. Set build command: npm run build
-echo 4. Set start command: npm start
+echo 6. Add PostgreSQL Database:
+echo    - Click "New +" → "PostgreSQL"
+echo    - Name: dataflow-postgres
+echo    - Plan: Free
+echo    - Copy Database URL
+echo    - Add to Web Service: DATABASE_URL = (paste URL)
 echo.
+echo ✅ Your app will be live in 5-10 minutes!
 
-echo 📝 Required Environment Variables:
-echo DATABASE_URL=postgresql://username:password@host:port/database
-echo NODE_ENV=production
-echo SESSION_SECRET=your-secret-key
-echo.
-
-echo 🗄️  Database Setup:
-echo - Neon (free): neon.tech
-echo - Supabase (free): supabase.com
-echo.
-
+start https://render.com/dashboard
 pause

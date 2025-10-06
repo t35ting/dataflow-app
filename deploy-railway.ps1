@@ -40,7 +40,7 @@ try {
 # Check if project exists
 Write-Host "`n📁 Checking project status..." -ForegroundColor Yellow
 try {
-    $projectStatus = railway status 2>$null
+    railway status 2>$null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "✅ Project is linked to Railway" -ForegroundColor Green
     } else {
@@ -55,7 +55,7 @@ try {
 
 # Check for environment variables
 Write-Host "`n🔧 Checking environment variables..." -ForegroundColor Yellow
-$envVars = railway variables 2>$null
+railway variables 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Environment variables configured" -ForegroundColor Green
     Write-Host "Current environment variables:" -ForegroundColor Cyan
