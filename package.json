@@ -8,7 +8,7 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --target=node18",
     "build:client": "cd client && npm run build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --target=node18",
-    "start": "set NODE_ENV=production && node dist/index.js",
+    "start": "node dist/index.js",
     "vercel-build": "npm run build",
     "netlify-build": "npm run build:client",
     "render-build": "npm run build",

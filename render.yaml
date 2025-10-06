@@ -11,3 +11,17 @@ services:
       - key: PORT
         value: 10000
     healthCheckPath: /health
+    autoDeploy: true
+    
+  - type: pserv
+    name: dataflow-postgres
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.postgres
+    envVars:
+      - key: POSTGRES_DB
+        value: dataflow
+      - key: POSTGRES_USER
+        value: dataflow_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true

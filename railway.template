@@ -1,0 +1,34 @@
+{
+  "name": "DataFlow",
+  "description": "LeetCode Problem Tracker with CSV Import/Export and Analytics",
+  "repository": "https://github.com/YOUR_USERNAME/DataFlow",
+  "logo": "https://raw.githubusercontent.com/YOUR_USERNAME/DataFlow/main/assets/logo.png",
+  "keywords": ["leetcode", "problems", "tracker", "analytics", "csv", "react", "express"],
+  "website": "https://dataflow.railway.app",
+  "success_url": "/",
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "railway-postgresql:basic"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "npm run db:push"
+  }
+}
